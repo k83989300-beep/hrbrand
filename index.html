@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>HR COLLECTION | پۆشینی چیڕۆک</title>
+    <!-- Firebase SDK (بۆ پایەداتای ئۆنڵاین) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <style>
+        /* ---------- هەمان ڕووکار - هیچ دەستکارییەک نەکراوە ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --sky-light: #D9EAF7;
+            --sky-soft: #C5DFF0;
+            --blue-powder: #B0D4E8;
+            --deep-navy: #2D5A7A;
+            --gold-soft: #C2A15B;
+            --text-dark: #1E3A5F;
+            --text-soft: #3B6A94;
+            --card-glass: rgba(255, 255, 255, 0.7);
+            --border-lucent: rgba(45, 90, 122, 0.15);
+            --shadow-airy: 0 12px 28px -8px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(45,90,122,0.05);
+        }
+
+        body {
+            font-family: 'Noto Sans Arabic', 'Poppins', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(145deg, #EFF5FA 0%, #E2EDF6 100%);
+            color: var(--text-dark);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .ambient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 20%, rgba(176,212,232,0.4), rgba(217,234,247,0.8));
+            z-index: -2;
+        }
+
+        .hero-section {
+            padding: 2.2rem 1.5rem 1.6rem;
+            text-align: center;
+            background: rgba(255,255,245,0.55);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-lucent);
+            margin-bottom: 0.8rem;
+        }
+
+        .brand-main {
+            font-family: 'Cinzel', serif;
+            font-size: 2.2rem;
+            letter-spacing: 6px;
+            font-weight: 700;
+            color: var(--deep-navy);
+            text-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            margin-bottom: 0.4rem;
+        }
+
+        .kurdish-badge {
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--gold-soft);
+            border-top: 1px solid var(--gold-soft);
+            display: inline-block;
+            padding-top: 6px;
+            font-weight: 500;
+        }
+
+        .hero-quote {
+            font-size: 0.85rem;
+            color: #4A6F8F;
+            margin-top: 12px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .filter-wrapper {
+            display: flex;
+            justify-content: center;
+            margin: 0.8rem 1rem 1.5rem;
+        }
+        .filter-modern {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.6rem;
+            background: rgba(255,255,250,0.7);
+            backdrop-filter: blur(4px);
+            padding: 0.6rem 1rem;
+            border-radius: 80px;
+            border: 1px solid var(--border-lucent);
+        }
+
+        .filter-chip-new {
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.4rem 1.2rem;
+            border-radius: 40px;
+            background: transparent;
+            color: var(--text-soft);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.3px;
+            border: none;
+        }
+
+        .filter-chip-new.active {
+            background: var(--deep-navy);
+            color: #F0F8FF;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 1.6rem;
+            padding: 2rem 0 3.5rem;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 250, 0.65);
+            backdrop-filter: blur(10px);
+            border-radius: 56px;
+            text-align: center;
+            padding: 3.5rem 1.8rem;
+            border: 1px solid rgba(45, 90, 122, 0.2);
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--deep-navy);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-desc {
+            color: #5A7C98;
+            font-size: 0.9rem;
+        }
+
+        .product-card {
+            background: rgba(255, 255, 248, 0.8);
+            backdrop-filter: blur(2px);
+            border-radius: 32px;
+            overflow: hidden;
+            transition: all 0.25s ease;
+            border: 1px solid rgba(176, 212, 232, 0.8);
+            box-shadow: var(--shadow-airy);
+        }
+
+        .product-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--blue-powder);
+            box-shadow: 0 20px 28px -12px rgba(0,0,0,0.08);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .image-wrapper {
+            position: relative;
+            aspect-ratio: 4 / 5;
+            background: #D9EAF7;
+        }
+
+        .product-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .category-tag {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(45, 90, 122, 0.75);
+            backdrop-filter: blur(3px);
+            padding: 4px 10px;
+            border-radius: 60px;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: #F0F8FF;
+        }
+
+        .admin-delete {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: rgba(200, 160, 100, 0.85);
+            border: none;
+            color: #1E3A5F;
+            font-size: 0.7rem;
+            padding: 5px 12px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            backdrop-filter: blur(4px);
+        }
+
+        .product-info {
+            padding: 1rem 0.8rem 1.2rem;
+            text-align: center;
+        }
+
+        .product-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-dark);
+        }
+
+        .product-price {
+            color: var(--gold-soft);
+            font-weight: 700;
+            font-size: 1rem;
+            border-top: 1px dashed #C5D5E5;
+            display: inline-block;
+            padding-top: 6px;
+            margin-top: 6px;
+        }
+
+        .admin-footer-area {
+            margin-top: 1rem;
+            padding: 1.4rem 1rem 1.8rem;
+            text-align: center;
+            background: rgba(210, 230, 245, 0.5);
+            backdrop-filter: blur(5px);
+            border-top: 1px solid var(--border-lucent);
+        }
+
+        .admin-toggle-btn {
+            background: rgba(45, 90, 122, 0.9);
+            border: none;
+            color: #EFF7FF;
+            padding: 8px 28px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-premium {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(145, 180, 200, 0.7);
+            backdrop-filter: blur(14px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-card {
+            background: #F4F9FE;
+            max-width: 460px;
+            width: 90%;
+            border-radius: 48px;
+            border: 1px solid #B0D4E8;
+            overflow: hidden;
+            box-shadow: 0 24px 32px -12px rgba(0,0,0,0.1);
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            background: #E8F0F7;
+            border-bottom: 1px solid #C5DFF0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-family: 'Cinzel', serif;
+            color: #2D5A7A;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #6F8FAA;
+        }
+
+        .modal-body {
+            padding: 1.6rem;
+        }
+
+        .input-lux {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1rem;
+            background: #FFFFFF;
+            border: 1px solid #C5DFF0;
+            border-radius: 28px;
+            color: #1E3A5F;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .btn-lux {
+            background: var(--deep-navy);
+            color: #F0F8FF;
+            width: 100%;
+            padding: 12px;
+            font-weight: bold;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+
+        .logout-link {
+            color: #C2A15B;
+            margin-top: 1.2rem;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .footer-copyright {
+            text-align: center;
+            padding: 1.2rem 1rem;
+            background: rgba(210, 230, 245, 0.6);
+            backdrop-filter: blur(3px);
+            border-top: 1px solid var(--border-lucent);
+            font-size: 0.7rem;
+            color: #4A6F8F;
+        }
+
+        .creator-name {
+            font-size: 0.7rem;
+            color: #6b8aa8;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 680px) {
+            .brand-main { font-size: 1.6rem; letter-spacing: 3px; }
+            .filter-modern { border-radius: 60px; gap: 0.3rem; }
+            .filter-chip-new { padding: 0.3rem 1rem; font-size: 0.75rem; }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="ambient-bg"></div>
+
+<div class="hero-section">
+    <div class="brand-main">HR COLLECTION</div>
+    <div class="kurdish-badge">هەر پۆشینێکت چیڕۆکێکە</div>
+    <div class="hero-quote">ئاسمانی پۆشاک • ڕەھەندی نەمری</div>
+</div>
+
+<div class="filter-wrapper">
+    <div class="filter-modern">
+        <div class="filter-chip-new active" data-cat="هەمووی">هەمووی</div>
+        <div class="filter-chip-new" data-cat="تی شێرت">تی شێرت</div>
+        <div class="filter-chip-new" data-cat="کراس">کراس</div>
+        <div class="filter-chip-new" data-cat="کابۆ">کابۆ</div>
+    </div>
+</div>
+
+<main class="container">
+    <div class="product-grid" id="productGrid"></div>
+</main>
+
+<div class="admin-footer-area">
+    <button class="admin-toggle-btn" id="openAdminBtn">🔐 بەڕێوەبەری کۆکراوە</button>
+    <p style="font-size: 10px; color: #5A7C98; margin-top: 10px;">دەستگەیشتن بە زیادکردن و سڕینەوە</p>
+</div>
+
+<div id="adminModal" class="modal-premium">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>پانێڵی بەڕێوەبەر</h3>
+            <span class="modal-close" id="closeModalBtn">&times;</span>
+        </div>
+        <div class="modal-body" id="modalDynamicBody">
+            <div id="loginPanel">
+                <input type="text" id="adminUser" class="input-lux" placeholder="ناوی بەکارهێنەر" autocomplete="off">
+                <input type="password" id="adminPass" class="input-lux" placeholder="وشەی تێپەڕ">
+                <button class="btn-lux" id="doLoginBtn">چوونە ژوورەوە</button>
+            </div>
+            <div id="dashboardPanel" style="display: none;">
+                <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+                    <img id="previewImg" src="https://placehold.co/100x100/C5DFF0/2D5A7A?text=HR" style="width: 70px; height: 70px; border-radius: 24px; border: 2px solid #C2A15B; object-fit: cover;">
+                </div>
+                <input type="file" id="productImageFile" accept="image/*" class="input-lux" style="padding: 6px;">
+                <input type="text" id="prodName" class="input-lux" placeholder="ناوی کاڵا (وەک: پانتۆڵی ئاسمانی)">
+                <select id="prodCat" class="input-lux">
+                    <option value="تی شێرت">تی شێرت</option>
+                    <option value="کراس">کراس</option>
+                    <option value="کابۆ">کابۆ</option>
+                </select>
+                <input type="text" id="prodPrice" class="input-lux" placeholder="نرخ  مث: 89,000 IQD">
+                <button class="btn-lux" id="addProductBtn">زیادکردنی کاڵا</button>
+                <div class="logout-link" id="logoutAdminBtn">چوونە دەرەوە</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="footer-copyright">
+    <div class="copyright-text">© 2026 - HR COLLECTION • هەموو مافێک پارێزراوە</div>
+    <div class="creator-name">دروستکراوە لەلایەن دەرباز</div>
+    <div class="copyright-text" style="margin-top: 4px;">هەر پۆشینێکت چیڕۆکێکە • شوێنی شایستە</div>
+</footer>
+
+<script>
+    // ---------- کانفیگ و پێکهێنانی Firebase (بۆ هەموو جیهان) ----------
+    //  پڕۆژەی Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyC4VZfG8cZqpq9ZLpLq7WqVx5LMNQ2pB8E", // خاوێن و کراوە بۆ نموونە - بۆ ئەم نموونەیە
+        authDomain: "hr-collection-7c4a2.firebaseapp.com",
+        databaseURL: "https://hr-collection-7c4a2-default-rtdb.firebaseio.com/",
+        projectId: "hr-collection-7c4a2",
+        storageBucket: "hr-collection-7c4a2.appspot.com",
+        messagingSenderId: "123456789012",
+        appId: "1:123456789012:web:abcd1234efgh5678"
+    };
+    // ئاگاداری: ئەم کانفیگە نموونەییە. پێویستە تۆ لە ماڵپەڕی Firebase (console.firebase.google.com) پڕۆژەیەک دروست بکەیت و کانفیگەکان لێرە دابنێیت. بەبێ کانفیگی ڕاست، سیستەمەکە ناکارێت.
+    // بەڵام من سیستەمی ئۆفڵاین/local وەک پشتگیری لەناو کۆدەکەدام، لەگەڵ پشتگیری Firebase بۆ ئەگەر کانفیگ هاتبێت.
+    
+    let database;
+    let productsRef;
+    let isFirebaseReady = false;
+    let products = [];
+    let isAdmin = false;
+    let currentFilter = 'هەمووی';
+    
+    // هەوڵی پێکهێنانی Firebase
+    try {
+        if (firebaseConfig.databaseURL && firebaseConfig.apiKey !== "AIzaSyC4VZfG8cZqpq9ZLpLq7WqVx5LMNQ2pB8E") {
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+            productsRef = database.ref('products');
+            isFirebaseReady = true;
+        } else {
+            console.warn("تکایە کانفیگی Firebase ڕاستەقینە دابنێ بۆ ئۆنڵاین بوون. تا ئەو کاتەی کانفیگ نییە، لە داتای خۆماڵی Local Storage بەکاردەهێنرێت.");
+            isFirebaseReady = false;
+        }
+    } catch(e) {
+        console.warn("Firebase connection error", e);
+        isFirebaseReady = false;
+    }
+    
+    // بارکردن لە Firebase یان LocalStorage
+    function loadProducts() {
+        if (isFirebaseReady && productsRef) {
+            productsRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if(data) {
+                    products = Object.entries(data).map(([id, item]) => ({ ...item, firebaseKey: id, id: parseInt(id) || Date.now() }));
+                } else {
+                    products = [];
+                }
+                renderProducts();
+            });
+        } else {
+            // کۆپی لە Local Storage
+            const stored = localStorage.getItem('hr_offline_backup');
+            products = stored ? JSON.parse(stored) : [];
+            renderProducts();
+        }
+    }
+    
+    function saveProduct(newProduct) {
+        if (isFirebaseReady && productsRef) {
+            const newRef = productsRef.push();
+            newRef.set(newProduct);
+        } else {
+            products.push(newProduct);
+            localStorage.setItem('hr_offline_backup', JSON.stringify(products));
+            renderProducts();
+        }
+    }
+    
+    function deleteProductFirebase(id, firebaseKey) {
+        if (isFirebaseReady && productsRef && firebaseKey) {
+            productsRef.child(firebaseKey).remove();
+        } else {
+            products = products.filter(p => p.id !== id);
+            localStorage.setItem('hr_offline_backup', JSON.stringify(products));
+            renderProducts();
+        }
+    }
+    
+    function renderProducts() {
+        const grid = document.getElementById('productGrid');
+        let filtered = products;
+        if(currentFilter !== 'هەمووی') {
+            filtered = products.filter(p => p.cat === currentFilter);
+        }
+        if(filtered.length === 0) {
+            grid.innerHTML = `<div class="empty-state"><div class="empty-title">کۆکراوەکە بەتاڵە</div><div class="empty-desc">هێشتا هیچ بەرهەمێک زیاد نەکراوە. لە پانێڵی بەڕێوەبەرەوە زیاد بکە. چیڕۆکی پۆشاکەکەت لێرە دەست پێ دەکات.</div></div>`;
+            return;
+        }
+        grid.innerHTML = filtered.map(item => {
+            const firebaseKey = item.firebaseKey || '';
+            return `
+            <div class="product-card">
+                <div class="image-wrapper">
+                    <img class="product-img" src="${item.img || 'https://placehold.co/600x800/C5DFF0/4A7A9E?text=HR'}" alt="${escapeHtml(item.name)}" onerror="this.src='https://placehold.co/600x800/C5DFF0/4A7A9E?text=HR'">
+                    <span class="category-tag">${escapeHtml(item.cat)}</span>
+                    ${isAdmin ? `<button class="admin-delete" onclick="deleteProductHandler('${item.id}','${firebaseKey}')">سڕینەوە</button>` : ''}
+                </div>
+                <div class="product-info">
+                    <div class="product-name">${escapeHtml(item.name)}</div>
+                    <div class="product-price">${escapeHtml(item.price)}</div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+    
+    window.deleteProductHandler = function(id, firebaseKey) {
+        if(!isAdmin) return;
+        if(confirm('دڵنیای لە سڕینەوە؟')) {
+            deleteProductFirebase(parseInt(id), firebaseKey);
+        }
+    };
+    
+    function addNewProductLogic() {
+        if(!isAdmin) return;
+        const name = document.getElementById('prodName').value.trim();
+        const price = document.getElementById('prodPrice').value.trim();
+        const cat = document.getElementById('prodCat').value;
+        const file = document.getElementById('productImageFile').files[0];
+        if(!name || !price) { alert('ناو و نرخ پڕ بکەوە'); return; }
+        const addItem = (imgBase64) => {
+            const newProduct = {
+                id: Date.now(),
+                name: name,
+                price: price,
+                cat: cat,
+                img: imgBase64 || null
+            };
+            saveProduct(newProduct);
+            document.getElementById('prodName').value = '';
+            document.getElementById('prodPrice').value = '';
+            document.getElementById('productImageFile').value = '';
+            document.getElementById('previewImg').src = "https://placehold.co/100x100/C5DFF0/2D5A7A?text=HR";
+            alert('کاڵا زیاد کرا');
+        };
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => addItem(e.target.result);
+            reader.readAsDataURL(file);
+        } else { addItem(null); }
+    }
+    
+    function bindPreview() {
+        const imgInput = document.getElementById('productImageFile');
+        if(imgInput) imgInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => { const preview = document.getElementById('previewImg'); if(preview) preview.src = ev.target.result; };
+                reader.readAsDataURL(file);
+            } else { document.getElementById('previewImg').src = "https://placehold.co/100x100/C5DFF0/2D5A7A?text=HR"; }
+        };
+    }
+    
+    // ئادمین: دەربازکاژین / darbaz2026
+    function initAdminEvents() {
+        document.getElementById('doLoginBtn').onclick = () => {
+            const user = document.getElementById('adminUser').value;
+            const pass = document.getElementById('adminPass').value;
+            if(user === 'darbazkazhin' && pass === 'darbaz2026') {
+                isAdmin = true;
+                document.getElementById('loginPanel').style.display = 'none';
+                document.getElementById('dashboardPanel').style.display = 'block';
+                renderProducts();
+                bindPreview();
+            } else { alert('هەڵە'); }
+        };
+        document.getElementById('addProductBtn').onclick = addNewProductLogic;
+        document.getElementById('logoutAdminBtn').onclick = () => {
+            isAdmin = false;
+            document.getElementById('loginPanel').style.display = 'block';
+            document.getElementById('dashboardPanel').style.display = 'none';
+            document.getElementById('adminUser').value = '';
+            document.getElementById('adminPass').value = '';
+            closeModal();
+            renderProducts();
+        };
+    }
+    
+    const modal = document.getElementById('adminModal');
+    const openBtn = document.getElementById('openAdminBtn');
+    const closeBtn = document.getElementById('closeModalBtn');
+    function openModal() { modal.style.display = 'flex'; if(!isAdmin) { document.getElementById('loginPanel').style.display = 'block'; document.getElementById('dashboardPanel').style.display = 'none'; } else { document.getElementById('loginPanel').style.display = 'none'; document.getElementById('dashboardPanel').style.display = 'block'; bindPreview(); } }
+    function closeModal() { modal.style.display = 'none'; }
+    openBtn.onclick = openModal;
+    closeBtn.onclick = closeModal;
+    window.onclick = (e) => { if(e.target === modal) closeModal(); };
+    
+    function setActiveFilter(category) {
+        currentFilter = category;
+        document.querySelectorAll('.filter-chip-new').forEach(chip => { if(chip.getAttribute('data-cat') === category) chip.classList.add('active'); else chip.classList.remove('active'); });
+        renderProducts();
+    }
+    document.querySelectorAll('.filter-chip-new').forEach(chip => chip.addEventListener('click', () => setActiveFilter(chip.getAttribute('data-cat'))));
+    
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, (m) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+    
+    loadProducts();
+    initAdminEvents();
+</script>
+</body>
+</html>
